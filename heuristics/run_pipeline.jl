@@ -1,8 +1,4 @@
-# ==============================================================================
-# PROYECTO: Optimización de Cobertura 5G Rural usando Heurísticas (UNMSM)
-# SCRIPT: heuristics/run_pipeline.jl
-# RESPONSABLE: Jack (Task 1.3: Pipeline de Verificación de Punta a Punta)
-# ==============================================================================
+# Verificación de resultados de GA y SA
 
 using Random
 using Statistics
@@ -15,14 +11,8 @@ using .Rural5GFitness.Rural5GModel
 
 const RUTA_ANALYTICS = normpath(joinpath(@__DIR__, "..", "analytics", "output"))
 
-println("=" ^ 80)
-println("  TASK 1.3: PIPELINE DE VERIFICACIÓN DE PUNTA A PUNTA (E2E)")
-println("=" ^ 80)
-println("Verificando consistencia e interoperabilidad de heurísticas:")
-println("  - Frente 1: Función objetivo calibrada (λ = $LAMBDA_DEFAULT)")
-println("  - Task 2.1: Algoritmo Genético (GA - Gael)")
-println("  - Task 2.2: Recocido Simulado (SA - Manuel)")
-println("-" ^ 80 * "\n")
+println("=== Verificación de resultados de GA y SA (λ = $LAMBDA_DEFAULT) ===")
+println()
 
 struct VerificacionResultado
     algoritmo::String
@@ -45,7 +35,7 @@ function verificar_archivo_potencias(ruta_resumen::String, ruta_potencias::Strin
     res_data, _ = readdlm(ruta_resumen, ',', Any; header=true)
     pot_data, _ = readdlm(ruta_potencias, ',', Any; header=true)
 
-    # pot_data tiene: [Algoritmo, Lambda, Semilla, Antena_ID, Pos_X, Pos_Y, Potencia_W]
+    # Columnas: [Algoritmo, Lambda, Semilla, Antena_ID, Pos_X, Pos_Y, Potencia_W]
     semillas_unicas = unique(res_data[:, 3])
     verificaciones = VerificacionResultado[]
 
@@ -57,7 +47,7 @@ function verificar_archivo_potencias(ruta_resumen::String, ruta_potencias::Strin
         filas_pot = findall(r -> r == s, pot_data[:, 3])
         potencias = Float64.(pot_data[filas_pot, 7])
 
-        # Verificación matemática independiente con core/fitness.jl
+        # Evaluación con fitness.jl
         eval_ind = Rural5GFitness.evaluar_solucion(potencias; lambda = LAMBDA_DEFAULT)
         err = abs(eval_ind.fitness - fit_rep)
         ok = err < 1e-6
@@ -74,9 +64,9 @@ function verificar_archivo_potencias(ruta_resumen::String, ruta_potencias::Strin
             ok
         ))
 
-        status_tag = ok ? "✅ OK" : "❌ ERROR"
-        @printf("[%s] %-4s | Semilla %4d | Fit Rep: %.6f | Fit Indep: %.6f | Error: %.2e | Cob: %.2f%% | Pot: %.2f W\n",
-                status_tag, algoritmo_nombre, s, fit_rep, eval_ind.fitness, err,
+        status_tag = ok ? "OK" : "ERROR"
+        @printf("[%s] %-4s | Semilla %4d | Fit: %.6f | Error: %.2e | Cob: %.2f%% | Pot: %.2f W\n",
+                status_tag, algoritmo_nombre, s, fit_rep, err,
                 eval_ind.cobertura_porcentaje, eval_ind.potencia_total_watts)
     end
 
@@ -90,25 +80,21 @@ ruta_ga_pot = joinpath(RUTA_ANALYTICS, "ga_potencias_$(tag).csv")
 ruta_sa_res = joinpath(RUTA_ANALYTICS, "sa_resumen_$(tag).csv")
 ruta_sa_pot = joinpath(RUTA_ANALYTICS, "sa_potencias_$(tag).csv")
 
-println("--- 1. VERIFICACIÓN INDEPENDIENTE DEL ALGORITMO GENÉTICO (GA) ---")
+println("1. Verificando Algoritmo Genético (GA)")
 v_ga = verificar_archivo_potencias(ruta_ga_res, ruta_ga_pot, "GA")
 
-println("\n--- 2. VERIFICACIÓN INDEPENDIENTE DEL RECOCIDO SIMULADO (SA) ---")
+println("\n2. Verificando Recocido Simulado (SA)")
 v_sa = verificar_archivo_potencias(ruta_sa_res, ruta_sa_pot, "SA")
 
 todas_v = vcat(v_ga, v_sa)
 n_total = length(todas_v)
 n_ok = count(v -> v.consistente, todas_v)
 
-println("\n" * "=" ^ 80)
-println("  RESULTADO FINAL DEL PIPELINE E2E")
-println("=" ^ 80)
+println("\n=== Resumen ===")
 @printf("Corridas verificadas: %d / %d (%.1f%% consistentes)\n", n_ok, n_total, (n_ok / max(1, n_total)) * 100.0)
 
 if n_ok == n_total && n_total > 0
-    println("🎉 ÉXITO TOTAL: Todas las soluciones de GA y SA son 100% consistentes con core/fitness.jl")
-    println("   No hay discrepancias numéricas ni desincronización en el equipo.")
+    println("Resultados consistentes con core/fitness.jl.")
 else
-    @warn "Se detectaron inconsistencias en algunas corridas. Revisar logs anteriores."
+    @warn "Se detectaron diferencias en algunas corridas."
 end
-println("=" ^ 80)

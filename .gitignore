@@ -30,3 +30,6 @@ JuliaLocalPreferences.toml
 
 # Conda environment and metadata created in the project directory by the CondaPkg package
 .CondaPkg/
+
+generate_report_figures.py
+report_images/

@@ -30,8 +30,8 @@ Facultad de Ingeniería de Sistemas e Informática — Universidad Nacional Mayo
 │   ├── model.jl                  # Modelo físico UIT-R P.525-5, grillas y precomputación matricial
 │   └── fitness.jl                # Función objetivo normalizada, cobertura e interferencia
 ├── heuristics/
-│   ├── test_fitness.jl           # Batería de pruebas unitarias y benchmark de rendimiento
-│   ├── run_pipeline.jl           # Pipeline de ejecución y auditoría para GA y SA
+│   ├── test_fitness.jl           # Pruebas unitarias de la función objetivo
+│   ├── run_pipeline.jl           # Script de verificación para GA y SA
 │   └── outputs/                  # Registro de resultados, curvas de convergencia y métricas CSV
 ├── analytics/                    # Visualizaciones espaciales 3D y análisis de sensibilidad
 ├── README.md                     # Documentación general del proyecto
